@@ -25,7 +25,7 @@ Build a safe, interactive and educational storytelling experience for young chil
 ## Development status
 
 - [x] GitHub repository created
-- [ ] Team invitations accepted
+- [x] Team invitations accepted
 - [ ] Technical architecture agreed
 - [ ] Backend initialized
 - [ ] Frontend connected to backend
