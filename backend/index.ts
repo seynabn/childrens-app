@@ -2,6 +2,7 @@ import sql from "./db";
 import Fastify from "fastify";
 import rootRoutes from "./routes/root";
 import healthRoutes from "./routes/health";
+import voiceRoutes from "./routes/voice";
 
 const app = Fastify({
   logger: true,
@@ -9,6 +10,7 @@ const app = Fastify({
 
 app.register(rootRoutes);
 app.register(healthRoutes);
+app.register(voiceRoutes, { prefix: "/api/voice" });
 
 
 app.get("/db-check", async () => {
