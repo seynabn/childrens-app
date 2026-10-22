@@ -1,9 +1,20 @@
-
 import type { FastifyPluginAsync } from "fastify";
 import { generateSpeech } from "../services/elevenlabs";
 import { requireElevenLabsVoiceId } from "../config";
 
 const voiceRoutes: FastifyPluginAsync = async (app) => {
+  // GET: Kontrollera att röstfunktionen finns
+  app.get("/", async () => {
+    return {
+      status: "ok",
+      message: "Babbel röst-API fungerar!",
+      endpoints: {
+        speak: "POST /api/voice/speak",
+      },
+    };
+  });
+
+  // Behåll er befintliga POST-route nedanför
   app.post<{ Body: { text: string } }>(
     "/speak",
     {
