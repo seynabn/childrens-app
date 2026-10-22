@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "dev": "bun --env-file=../.env run --watch index.ts",
     "typecheck": "bun check"
   },
   "devDependencies": {

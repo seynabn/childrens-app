@@ -3,6 +3,7 @@ import Fastify from "fastify";
 import rootRoutes from "./routes/root";
 import healthRoutes from "./routes/health";
 import voiceRoutes from "./routes/voice";
+import storiesRoutes from "./routes/stories";
 
 const app = Fastify({
   logger: true,
@@ -11,16 +12,26 @@ const app = Fastify({
 app.register(rootRoutes);
 app.register(healthRoutes);
 app.register(voiceRoutes, { prefix: "/api/voice" });
+app.register(storiesRoutes, { prefix: "/api/stories" });
 
 
-app.get("/db-check", async () => {
+app.get("/db-check", async (request, reply) => {
   const result = await sql`SELECT 1 AS connected`;
+  const firstRow = result[0];
+
+  if (!firstRow) {
+    return reply.code(500).send({
+      status: "error",
+      message: "Databasen returnerade inget resultat.",
+    });
+  }
 
   return {
     status: "ok",
-    database: result[0].connected,
+    database: firstRow.connected,
   };
 });
+
 
 
 const start = async () => {
