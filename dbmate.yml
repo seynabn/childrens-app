@@ -1,0 +1,8 @@
+# dbmate configuration for local developer workflows
+# See: https://github.com/amacneil/dbmate
+
+# The DATABASE_URL is typically provided via environment variable.
+# The verified repository-root invocation is:
+# dbmate --migrations-dir db/migrations up
+
+migration_dir: db/migrations

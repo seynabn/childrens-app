@@ -3,14 +3,18 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "packageManager": "bun@1.4.3",
   "scripts": {
     "dev": "bun --env-file=../.env run --watch index.ts",
-    "typecheck": "bun check"
+    "start": "bun --env-file=../.env run index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test --preload ./tests/helpers/deny-network.ts ./tests/unit ./tests/http",
+    "test:coverage": "bun test --coverage --preload ./tests/helpers/deny-network.ts ./tests/unit ./tests/http",
+    "test:db": "bun test ./tests/integration/repository",
+    "smoke:elevenlabs": "bun --env-file=../.env run ./manual/elevenlabs-smoke.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
+    "@types/bun": "latest",
     "typescript": "^7"
   },
   "dependencies": {
