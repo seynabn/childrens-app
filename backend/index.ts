@@ -4,16 +4,16 @@ import rootRoutes from "./routes/root";
 import healthRoutes from "./routes/health";
 import voiceRoutes from "./routes/voice";
 import storiesRoutes from "./routes/stories";
-
+import wordsRoutes from "./routes/words";
 const app = Fastify({
   logger: true,
 });
 
+app.register(wordsRoutes, { prefix: "/api/words" });
 app.register(rootRoutes);
 app.register(healthRoutes);
 app.register(voiceRoutes, { prefix: "/api/voice" });
 app.register(storiesRoutes, { prefix: "/api/stories" });
-
 
 app.get("/db-check", async (request, reply) => {
   const result = await sql`SELECT 1 AS connected`;
@@ -32,8 +32,6 @@ app.get("/db-check", async (request, reply) => {
   };
 });
 
-
-
 const start = async () => {
   try {
     await app.listen({
@@ -47,4 +45,3 @@ const start = async () => {
 };
 
 start();
-
