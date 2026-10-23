@@ -1,19 +1,14 @@
 
 const API_URL = "https://api.elevenlabs.io/v1";
 
-function getApiKey(): string {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("ELEVENLABS_API_KEY saknas.");
-  }
-
-  return apiKey;
+export interface VoiceProvider {
+  generateSpeech(text: string, voiceId: string): Promise<ArrayBuffer>;
 }
 
-export async function generateSpeech(
+async function requestSpeech(
   text: string,
   voiceId: string,
+  apiKey: string,
 ): Promise<ArrayBuffer> {
   if (!text.trim()) {
     throw new Error("Texten får inte vara tom.");
@@ -28,7 +23,7 @@ export async function generateSpeech(
     {
       method: "POST",
       headers: {
-        "xi-api-key": getApiKey(),
+        "xi-api-key": apiKey,
         "Content-Type": "application/json",
         Accept: "audio/mpeg",
       },
@@ -50,4 +45,8 @@ export async function generateSpeech(
   }
 
   return response.arrayBuffer();
+}
+
+export function createElevenLabsVoiceProvider(apiKey: string): VoiceProvider {
+  return { generateSpeech: (text, voiceId) => requestSpeech(text, voiceId, apiKey) };
 }

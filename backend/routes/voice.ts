@@ -1,8 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
-import { generateSpeech } from "../services/elevenlabs";
-import { requireElevenLabsVoiceId } from "../config";
+import type { VoiceProvider } from "../services/elevenlabs";
 
-const voiceRoutes: FastifyPluginAsync = async (app) => {
+const voiceRoutes: FastifyPluginAsync<{ voice: VoiceProvider; voiceId: string }> = async (app, options) => {
   // GET: Kontrollera att röstfunktionen finns
   app.get("/", async () => {
     return {
@@ -31,10 +30,7 @@ const voiceRoutes: FastifyPluginAsync = async (app) => {
     },
     async (request, reply) => {
       try {
-        const audio = await generateSpeech(
-          request.body.text,
-          requireElevenLabsVoiceId(),
-        );
+        const audio = await options.voice.generateSpeech(request.body.text, options.voiceId);
 
         return reply
           .header("Content-Type", "audio/mpeg")

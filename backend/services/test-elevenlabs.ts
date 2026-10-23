@@ -1,14 +1,17 @@
 
-import { generateSpeech } from "./elevenlabs";
+import { createElevenLabsVoiceProvider } from "./elevenlabs";
 
-const voiceId = process.env.ELEVENLABS_VOICEID;
+const voiceId = process.env.ELEVENLABS_VOICE_ID;
+const apiKey = process.env.ELEVENLABS_API_KEY;
 
-if (!voiceId) {
-  throw new Error("ELEVENLABS_VOICE_ID saknas.");
+if (!voiceId || !apiKey) {
+  throw new Error("ELEVENLABS_API_KEY eller ELEVENLABS_VOICE_ID saknas.");
 }
 
+const voice = createElevenLabsVoiceProvider(apiKey);
+
 try {
-  const audio = await generateSpeech(
+  const audio = await voice.generateSpeech(
     "Hej! Ska vi upptäcka något spännande tillsammans?",
     voiceId,
   );

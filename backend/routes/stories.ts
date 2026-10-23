@@ -1,11 +1,11 @@
 
 import type { FastifyPluginAsync } from "fastify";
-import sql from "../db";
+import type { Database } from "../src/db/client";
 
-const storiesRoutes: FastifyPluginAsync = async (app) => {
+const storiesRoutes: FastifyPluginAsync<{ database: Database }> = async (app, { database }) => {
   // GET: Hämta alla berättelser
   app.get("/", async () => {
-    const stories = await sql`
+    const stories = await database.query`
       SELECT id, title, body, created_at
       FROM stories
       ORDER BY created_at DESC
@@ -29,7 +29,7 @@ const storiesRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request, reply) => {
-      const stories = await sql`
+      const stories = await database.query`
         SELECT id, title, body, created_at
         FROM stories
         WHERE id = ${request.params.id}
@@ -74,7 +74,7 @@ const storiesRoutes: FastifyPluginAsync = async (app) => {
         });
       }
 
-      const stories = await sql`
+      const stories = await database.query`
         INSERT INTO stories (title, body)
         VALUES (${title}, ${body})
         RETURNING id, title, body, created_at
