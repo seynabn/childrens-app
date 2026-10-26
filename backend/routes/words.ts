@@ -1,17 +1,12 @@
-import type { FastifyPluginAsync } from "fastify";
-import sql from "../db";
+import type { FastifyInstance } from "fastify";
+import * as controllers from "../handlers/words";
 
-const wordsRoutes: FastifyPluginAsync = async (app) => {
-  // GET: Hämta alla ord från databasen
-  app.get("/", async () => {
-    const words = await sql`
-      SELECT word_id, word, image, level, created_at
-      FROM words
-      ORDER BY level ASC, word ASC
-    `;
-
-    return { words };
+async function routes(app: FastifyInstance) {
+  app.route({
+    method: "GET",
+    url: "/",
+    handler: controllers.getWords,
   });
-};
+}
 
-export default wordsRoutes;
+export default routes;

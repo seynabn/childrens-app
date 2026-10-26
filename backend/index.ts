@@ -5,10 +5,15 @@ import healthRoutes from "./routes/health";
 import voiceRoutes from "./routes/voice";
 import storiesRoutes from "./routes/stories";
 import wordsRoutes from "./routes/words";
+import playSessionsRoutes from "./routes/play-sessions";
+import speechAttemptsRoutes from "./routes/speech-attempts";
 const app = Fastify({
   logger: true,
 });
-
+app.register(speechAttemptsRoutes, {
+  prefix: "/api/speech-attempts",
+});
+app.register(playSessionsRoutes, { prefix: "/api/play-sessions" });
 app.register(wordsRoutes, { prefix: "/api/words" });
 app.register(rootRoutes);
 app.register(healthRoutes);

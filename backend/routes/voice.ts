@@ -1,9 +1,9 @@
 import type { FastifyPluginAsync } from "fastify";
-import { generateSpeech } from "../services/elevenlabs";
+import { generateSpeech, VoiceGenerationError } from "../services/elevenlabs";
 import { requireElevenLabsVoiceId } from "../config";
 
 const voiceRoutes: FastifyPluginAsync = async (app) => {
-  // GET: Kontrollera att röstfunktionen finns
+  // Kontrollera att röst-API:t finns.
   app.get("/", async () => {
     return {
       status: "ok",
@@ -14,7 +14,6 @@ const voiceRoutes: FastifyPluginAsync = async (app) => {
     };
   });
 
-  // Behåll er befintliga POST-route nedanför
   app.post<{ Body: { text: string } }>(
     "/speak",
     {
@@ -41,9 +40,42 @@ const voiceRoutes: FastifyPluginAsync = async (app) => {
           .header("Cache-Control", "no-store")
           .send(Buffer.from(audio));
       } catch (error) {
-        app.log.error({ err: error }, "Röstgenerering misslyckades");
+        // Logga felkoden utan hela felobjektet.
+        app.log.error(
+          {
+            errorCode:
+              error instanceof VoiceGenerationError
+                ? error.code
+                : "UNEXPECTED_ERROR",
+          },
+          "Röstgenerering misslyckades",
+        );
 
-        return reply.code(502).send({
+        // Kända fel får tydliga koder. Okända fel hålls generella.
+        if (error instanceof VoiceGenerationError) {
+          const messages: Record<string, string> = {
+            VOICE_CONFIGURATION_ERROR:
+              "Röstfunktionen är inte korrekt konfigurerad.",
+            VOICE_PROVIDER_PAYMENT_REQUIRED:
+              "Röstfunktionen är tillfälligt otillgänglig.",
+            VOICE_PROVIDER_AUTH_FAILED: "Röstfunktionen kunde inte ansluta.",
+            VOICE_PROVIDER_RATE_LIMITED:
+              "För många försök. Vänta en stund och försök igen.",
+            VOICE_PROVIDER_UNAVAILABLE: "Rösten är tillfälligt otillgänglig.",
+            VOICE_PROVIDER_REJECTED_REQUEST:
+              "Texten kunde inte omvandlas till ljud.",
+            VOICE_GENERATION_TIMEOUT: "Det tog för lång tid att skapa ljudet.",
+            VOICE_GENERATION_FAILED: "Det gick inte att skapa ljud just nu.",
+          };
+
+          return reply.code(error.statusCode).send({
+            error: error.code,
+            message:
+              messages[error.code] ?? "Det gick inte att skapa ljud just nu.",
+          });
+        }
+
+        return reply.code(500).send({
           error: "VOICE_GENERATION_FAILED",
           message: "Det gick inte att skapa ljud just nu.",
         });
