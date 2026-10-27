@@ -1,8 +1,3 @@
--- migrate:up
-
-
--- migrate:down
-
 
 -- migrate:up
 CREATE TABLE play_sessions (

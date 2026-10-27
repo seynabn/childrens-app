@@ -8,3 +8,4 @@ ADD COLUMN session_id BIGINT
 -- migrate:down
 ALTER TABLE speech_attempts
 DROP COLUMN session_id;
+
