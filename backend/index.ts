@@ -7,9 +7,28 @@ import storiesRoutes from "./routes/stories";
 import wordsRoutes from "./routes/words";
 import playSessionsRoutes from "./routes/play-sessions";
 import speechAttemptsRoutes from "./routes/speech-attempts";
+import usersRoutes from "./routes/users";
+import jwt from "@fastify/jwt";
+import childrenRoutes from "./routes/children";
+import onboardingRoutes from "./routes/onboarding";
+
 const app = Fastify({
   logger: true,
 });
+const jwtSecret = process.env.JWT_SECRET;
+
+if (!jwtSecret || jwtSecret.length < 32) {
+  throw new Error(
+    "JWT_SECRET saknas eller är för kort. Kontrollera projektets .env-fil.",
+  );
+}
+
+app.register(jwt, {
+  secret: jwtSecret,
+});
+
+
+app.register(usersRoutes, { prefix: "/api/users" });
 app.register(speechAttemptsRoutes, {
   prefix: "/api/speech-attempts",
 });
@@ -19,6 +38,8 @@ app.register(rootRoutes);
 app.register(healthRoutes);
 app.register(voiceRoutes, { prefix: "/api/voice" });
 app.register(storiesRoutes, { prefix: "/api/stories" });
+app.register(childrenRoutes, { prefix: "/api/children" });
+app.register(onboardingRoutes, { prefix: "/api/onboarding" });
 
 app.get("/db-check", async (request, reply) => {
   const result = await sql`SELECT 1 AS connected`;

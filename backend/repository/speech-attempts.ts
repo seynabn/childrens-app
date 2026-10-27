@@ -33,6 +33,7 @@ export async function createSpeechAttempt(
       recognition_status,
       created_at
   `;
+  return attempts[0];
 }
 
 

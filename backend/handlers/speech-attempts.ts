@@ -1,6 +1,9 @@
+
 import type { FastifyReply, FastifyRequest } from "fastify";
 import * as services from "../services";
+import { handleUnexpectedError } from "../errors/error-handler";
 
+// Vilka uppgifter appen måste skicka för ett talförsök.
 type CreateSpeechAttemptBody = {
   childId: number;
   wordId: number;
@@ -9,9 +12,14 @@ type CreateSpeechAttemptBody = {
   recognitionStatus: "unprocessed" | "matched" | "uncertain" | "not_matched";
 };
 
-const validStatuses = ["unprocessed", "matched", "uncertain", "not_matched"];
+const validStatuses = [
+  "unprocessed",
+  "matched",
+  "uncertain",
+  "not_matched",
+];
 
-// Tar emot ett talförsök från appen.
+// Tar emot och sparar ett talförsök.
 export async function createSpeechAttempt(
   request: FastifyRequest<{ Body: CreateSpeechAttemptBody }>,
   reply: FastifyReply,
@@ -47,21 +55,33 @@ export async function createSpeechAttempt(
     });
   }
 
-  const attempt = await services.createSpeechAttempt(
-    childId,
-    wordId,
-    sessionId,
-    attemptedText,
-    recognitionStatus,
-  );
+  try {
+    const attempt = await services.createSpeechAttempt(
+      childId,
+      wordId,
+      sessionId,
+      attemptedText,
+      recognitionStatus,
+    );
 
-  return reply.code(201).send({ attempt });
+    return reply.code(201).send({ attempt });
+  } catch (error) {
+    return handleUnexpectedError(
+      request,
+      reply,
+      error,
+      "Talförsöket kunde inte sparas. Kontrollera att barn, ord och lekstund finns och hör ihop.",
+      400,
+    );
+  }
 }
 
+// Parametern som kommer från URL:en.
 type GetSpeechAttemptsParams = {
   sessionId: string;
 };
 
+// Hämtar talförsöken för en lekstund.
 export async function getSpeechAttemptsBySession(
   request: FastifyRequest<{ Params: GetSpeechAttemptsParams }>,
   reply: FastifyReply,
