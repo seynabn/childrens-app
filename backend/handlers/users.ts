@@ -1,8 +1,7 @@
 
 import type { FastifyReply, FastifyRequest } from "fastify";
 import * as services from "../services";
-import { isJwtError } from "../errors/jwt-errors";
-import { handleUnexpectedError } from "../errors/error-handler";
+import { handleRouteError } from "../errors/error-handler";
 
 type RegisterBody = {
   email: string;
@@ -42,7 +41,7 @@ export async function registerUser(
   try {
     const user = await services.createUser(normalizedEmail, password);
     return reply.code(201).send({ user });
-  } catch (error) {
+  } catch (error: unknown) {
     // PostgreSQL-felkod 23505 betyder att ett unikt värde redan finns.
     if (
       typeof error === "object" &&
@@ -55,7 +54,7 @@ export async function registerUser(
       });
     }
 
-    return handleUnexpectedError(
+    return handleRouteError(
       request,
       reply,
       error,
@@ -112,8 +111,8 @@ export async function loginUser(
       user,
       token,
     });
-  } catch (error) {
-    return handleUnexpectedError(
+  } catch (error: unknown) {
+    return handleRouteError(
       request,
       reply,
       error,
@@ -142,15 +141,8 @@ export async function getCurrentUser(
     }
 
     return reply.code(200).send({ user });
-  } catch (error) {
-    // Ogiltig eller saknad token.
-    if (isJwtError(error)) {
-      return reply.code(401).send({
-        error: "Du måste vara inloggad.",
-      });
-    }
-
-    return handleUnexpectedError(
+  } catch (error: unknown) {
+    return handleRouteError(
       request,
       reply,
       error,

@@ -1,8 +1,8 @@
+
 import type { FastifyReply, FastifyRequest } from "fastify";
 import * as services from "../services";
-import { handleUnexpectedError } from "../errors/error-handler";
 import * as childServices from "../services/children";
-import { isJwtError } from "../errors/jwt-errors";
+import { handleRouteError } from "../errors/error-handler";
 
 // Vilka uppgifter appen måste skicka för ett talförsök.
 type CreateSpeechAttemptBody = {
@@ -13,15 +13,25 @@ type CreateSpeechAttemptBody = {
   recognitionStatus: "unprocessed" | "matched" | "uncertain" | "not_matched";
 };
 
-const validStatuses = ["unprocessed", "matched", "uncertain", "not_matched"];
+const validStatuses = [
+  "unprocessed",
+  "matched",
+  "uncertain",
+  "not_matched",
+];
 
 // Tar emot och sparar ett talförsök.
 export async function createSpeechAttempt(
   request: FastifyRequest<{ Body: CreateSpeechAttemptBody }>,
   reply: FastifyReply,
 ) {
-  const { childId, wordId, sessionId, attemptedText, recognitionStatus } =
-    request.body ?? {};
+  const {
+    childId,
+    wordId,
+    sessionId,
+    attemptedText,
+    recognitionStatus,
+  } = request.body ?? {};
 
   if (
     !Number.isInteger(childId) ||
@@ -94,13 +104,7 @@ export async function createSpeechAttempt(
 
     return reply.code(201).send({ attempt });
   } catch (error: unknown) {
-    if (isJwtError(error)) {
-      return reply.code(401).send({
-        error: "Du måste vara inloggad.",
-      });
-    }
-
-    return handleUnexpectedError(
+    return handleRouteError(
       request,
       reply,
       error,
@@ -159,13 +163,7 @@ export async function getSpeechAttemptsBySession(
 
     return reply.code(200).send({ attempts });
   } catch (error: unknown) {
-    if (isJwtError(error)) {
-      return reply.code(401).send({
-        error: "Du måste vara inloggad.",
-      });
-    }
-
-    return handleUnexpectedError(
+    return handleRouteError(
       request,
       reply,
       error,

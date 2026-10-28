@@ -1,8 +1,8 @@
+
 import type { FastifyReply, FastifyRequest } from "fastify";
 import * as services from "../services";
 import * as childServices from "../services/children";
-import { isJwtError } from "../errors/jwt-errors";
-import { handleUnexpectedError } from "../errors/error-handler";
+import { handleRouteError } from "../errors/error-handler";
 
 type ChildParams = {
   childId: string;
@@ -34,6 +34,7 @@ const allowedInterests = [
   "other",
 ];
 
+// Hämtar onboarding-svar för ett barn som tillhör föräldern.
 export async function getMyOnboarding(
   request: FastifyRequest<{ Params: ChildParams }>,
   reply: FastifyReply,
@@ -50,7 +51,10 @@ export async function getMyOnboarding(
       });
     }
 
-    const child = await childServices.getChildByIdAndUserId(childId, user.sub);
+    const child = await childServices.getChildByIdAndUserId(
+      childId,
+      user.sub,
+    );
 
     if (!child) {
       return reply.code(404).send({
@@ -62,13 +66,7 @@ export async function getMyOnboarding(
 
     return reply.code(200).send({ onboarding });
   } catch (error: unknown) {
-    if (isJwtError(error)) {
-      return reply.code(401).send({
-        error: "Du måste vara inloggad.",
-      });
-    }
-
-    return handleUnexpectedError(
+    return handleRouteError(
       request,
       reply,
       error,
@@ -77,6 +75,7 @@ export async function getMyOnboarding(
   }
 }
 
+// Sparar onboarding-svar för ett barn som tillhör föräldern.
 export async function saveMyOnboarding(
   request: FastifyRequest<{
     Params: ChildParams;
@@ -89,7 +88,7 @@ export async function saveMyOnboarding(
 
     const user = request.user as { sub: string };
     const { childId } = request.params;
-        const body = request.body;
+    const body = request.body;
 
     if (
       body.useNameInSpeech !== undefined &&
@@ -118,13 +117,17 @@ export async function saveMyOnboarding(
         error: "Uttalet kan inte bekräftas om namnet inte används i tal.",
       });
     }
+
     if (!/^[1-9]\d*$/.test(childId)) {
       return reply.code(400).send({
         error: "Barnets ID är ogiltigt.",
       });
     }
 
-    const child = await childServices.getChildByIdAndUserId(childId, user.sub);
+    const child = await childServices.getChildByIdAndUserId(
+      childId,
+      user.sub,
+    );
 
     if (!child) {
       return reply.code(404).send({
@@ -147,7 +150,10 @@ export async function saveMyOnboarding(
       });
     }
 
-    if (body.canYourChildSpeak === "not_yet" && body.combinesWords !== null) {
+    if (
+      body.canYourChildSpeak === "not_yet" &&
+      body.combinesWords !== null
+    ) {
       return reply.code(400).send({
         error: "Kombinerar ord ska vara null om barnet ännu inte pratar.",
       });
@@ -188,7 +194,8 @@ export async function saveMyOnboarding(
     if (
       !Array.isArray(body.communicationModes) ||
       !body.communicationModes.every(
-        (mode) => typeof mode === "string" && mode.trim().length > 0,
+        (mode) =>
+          typeof mode === "string" && mode.trim().length > 0,
       )
     ) {
       return reply.code(400).send({
@@ -206,26 +213,29 @@ export async function saveMyOnboarding(
     const answers = {
       canYourChildSpeak: body.canYourChildSpeak,
       combinesWords:
-        body.canYourChildSpeak === "not_yet" ? null : body.combinesWords,
+        body.canYourChildSpeak === "not_yet"
+          ? null
+          : body.combinesWords,
       swedishExposure: body.swedishExposure,
-      otherLanguages: body.otherLanguages.map((language) => language.trim()),
-      communicationModes: body.communicationModes.map((mode) => mode.trim()),
-            useNameInSpeech,
+      otherLanguages: body.otherLanguages.map((language) =>
+        language.trim(),
+      ),
+      communicationModes: body.communicationModes.map((mode) =>
+        mode.trim(),
+      ),
+      useNameInSpeech,
       namePronunciationConfirmed:
         useNameInSpeech && namePronunciationConfirmed,
     };
 
-    const onboarding = await services.saveOnboardingByChildId(childId, answers);
+    const onboarding = await services.saveOnboardingByChildId(
+      childId,
+      answers,
+    );
 
     return reply.code(200).send({ onboarding });
   } catch (error: unknown) {
-    if (isJwtError(error)) {
-      return reply.code(401).send({
-        error: "Du måste vara inloggad.",
-      });
-    }
-
-    return handleUnexpectedError(
+    return handleRouteError(
       request,
       reply,
       error,

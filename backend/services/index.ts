@@ -15,3 +15,8 @@ export {
   saveOnboardingByChildId,
 } from "./onboarding";
 export { getPlaySessionById } from "./play-sessions";
+export {
+  getChildInterests,
+  saveChildInterests,
+} from "./child-interests";
+export { getWordChoices } from "./words";

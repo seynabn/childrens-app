@@ -11,6 +11,7 @@ import speechAttemptsRoutes from "./routes/speech-attempts";
 import usersRoutes from "./routes/users";
 import jwt from "@fastify/jwt";
 import childrenRoutes from "./routes/children";
+import childInterestsRoutes from "./routes/child-interests";
 import onboardingRoutes from "./routes/onboarding";
 
 const app = Fastify({
@@ -50,6 +51,7 @@ app.register(healthRoutes);
 app.register(voiceRoutes, { prefix: "/api/voice" });
 app.register(storiesRoutes, { prefix: "/api/stories" });
 app.register(childrenRoutes, { prefix: "/api/children" });
+app.register(childInterestsRoutes, { prefix: "/api/children" });
 app.register(onboardingRoutes, { prefix: "/api/onboarding" });
 
 app.get("/db-check", async (request, reply) => {
