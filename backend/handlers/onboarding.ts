@@ -19,6 +19,8 @@ type SaveOnboardingBody = {
     | null;
   otherLanguages: string[];
   communicationModes: string[];
+  useNameInSpeech?: boolean;
+  namePronunciationConfirmed?: boolean;
 };
 
 const allowedInterests = [
@@ -31,7 +33,6 @@ const allowedInterests = [
   "nature",
   "other",
 ];
-
 
 export async function getMyOnboarding(
   request: FastifyRequest<{ Params: ChildParams }>,
@@ -49,10 +50,7 @@ export async function getMyOnboarding(
       });
     }
 
-    const child = await childServices.getChildByIdAndUserId(
-      childId,
-      user.sub,
-    );
+    const child = await childServices.getChildByIdAndUserId(childId, user.sub);
 
     if (!child) {
       return reply.code(404).send({
@@ -79,8 +77,6 @@ export async function getMyOnboarding(
   }
 }
 
-
-
 export async function saveMyOnboarding(
   request: FastifyRequest<{
     Params: ChildParams;
@@ -93,18 +89,42 @@ export async function saveMyOnboarding(
 
     const user = request.user as { sub: string };
     const { childId } = request.params;
-    const body = request.body;
+        const body = request.body;
 
+    if (
+      body.useNameInSpeech !== undefined &&
+      typeof body.useNameInSpeech !== "boolean"
+    ) {
+      return reply.code(400).send({
+        error: "Inställningen för användning av barnets namn är ogiltig.",
+      });
+    }
+
+    if (
+      body.namePronunciationConfirmed !== undefined &&
+      typeof body.namePronunciationConfirmed !== "boolean"
+    ) {
+      return reply.code(400).send({
+        error: "Bekräftelsen av barnets uttal är ogiltig.",
+      });
+    }
+
+    const useNameInSpeech = body.useNameInSpeech ?? false;
+    const namePronunciationConfirmed =
+      body.namePronunciationConfirmed ?? false;
+
+    if (!useNameInSpeech && namePronunciationConfirmed) {
+      return reply.code(400).send({
+        error: "Uttalet kan inte bekräftas om namnet inte används i tal.",
+      });
+    }
     if (!/^[1-9]\d*$/.test(childId)) {
       return reply.code(400).send({
         error: "Barnets ID är ogiltigt.",
       });
     }
 
-    const child = await childServices.getChildByIdAndUserId(
-      childId,
-      user.sub,
-    );
+    const child = await childServices.getChildByIdAndUserId(childId, user.sub);
 
     if (!child) {
       return reply.code(404).send({
@@ -127,10 +147,7 @@ export async function saveMyOnboarding(
       });
     }
 
-    if (
-      body.canYourChildSpeak === "not_yet" &&
-      body.combinesWords !== null
-    ) {
+    if (body.canYourChildSpeak === "not_yet" && body.combinesWords !== null) {
       return reply.code(400).send({
         error: "Kombinerar ord ska vara null om barnet ännu inte pratar.",
       });
@@ -171,8 +188,7 @@ export async function saveMyOnboarding(
     if (
       !Array.isArray(body.communicationModes) ||
       !body.communicationModes.every(
-        (mode) =>
-          typeof mode === "string" && mode.trim().length > 0,
+        (mode) => typeof mode === "string" && mode.trim().length > 0,
       )
     ) {
       return reply.code(400).send({
@@ -190,22 +206,16 @@ export async function saveMyOnboarding(
     const answers = {
       canYourChildSpeak: body.canYourChildSpeak,
       combinesWords:
-        body.canYourChildSpeak === "not_yet"
-          ? null
-          : body.combinesWords,
+        body.canYourChildSpeak === "not_yet" ? null : body.combinesWords,
       swedishExposure: body.swedishExposure,
-      otherLanguages: body.otherLanguages.map((language) =>
-        language.trim(),
-      ),
-      communicationModes: body.communicationModes.map((mode) =>
-        mode.trim(),
-      ),
+      otherLanguages: body.otherLanguages.map((language) => language.trim()),
+      communicationModes: body.communicationModes.map((mode) => mode.trim()),
+            useNameInSpeech,
+      namePronunciationConfirmed:
+        useNameInSpeech && namePronunciationConfirmed,
     };
 
-    const onboarding = await services.saveOnboardingByChildId(
-      childId,
-      answers,
-    );
+    const onboarding = await services.saveOnboardingByChildId(childId, answers);
 
     return reply.code(200).send({ onboarding });
   } catch (error: unknown) {

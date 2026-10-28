@@ -42,3 +42,19 @@ export async function endPlaySession(
   return sessions[0];
 }
 
+// Hämtar en leksession med dess barn-ID.
+export async function getPlaySessionById(sessionId: number) {
+  const sessions = await sql`
+    SELECT
+      session_id,
+      child_id,
+      started_at,
+      ended_at,
+      engagement,
+      created_at
+    FROM play_sessions
+    WHERE session_id = ${sessionId}
+  `;
+
+  return sessions[0] ?? null;
+}

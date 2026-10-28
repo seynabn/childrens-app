@@ -1,4 +1,3 @@
-
 import sql from "../db";
 
 // Svarsalternativ som onboarding tillåter.
@@ -13,6 +12,8 @@ export type OnboardingAnswers = {
     | null;
   otherLanguages: string[];
   communicationModes: string[];
+  useNameInSpeech: boolean;
+  namePronunciationConfirmed: boolean;
 };
 
 // Hämtar onboarding-svaren för ett barn.
@@ -26,6 +27,8 @@ export async function findOnboardingByChildId(childId: string) {
       swedish_exposure,
       other_languages,
       communication_modes,
+      use_name_in_speech,
+      name_pronunciation_confirmed,
       completed_at,
       created_at,
       updated_at
@@ -50,6 +53,8 @@ export async function saveOnboardingByChildId(
       swedish_exposure,
       other_languages,
       communication_modes,
+      use_name_in_speech,
+      name_pronunciation_confirmed,
       completed_at,
       updated_at
     )
@@ -60,6 +65,8 @@ export async function saveOnboardingByChildId(
       ${answers.swedishExposure},
       ${answers.otherLanguages},
       ${answers.communicationModes},
+      ${answers.useNameInSpeech},
+      ${answers.namePronunciationConfirmed},
       NOW(),
       NOW()
     )
@@ -70,6 +77,8 @@ export async function saveOnboardingByChildId(
       swedish_exposure = EXCLUDED.swedish_exposure,
       other_languages = EXCLUDED.other_languages,
       communication_modes = EXCLUDED.communication_modes,
+      use_name_in_speech = EXCLUDED.use_name_in_speech,
+      name_pronunciation_confirmed = EXCLUDED.name_pronunciation_confirmed,
       completed_at = NOW(),
       updated_at = NOW()
     RETURNING
@@ -80,6 +89,8 @@ export async function saveOnboardingByChildId(
       swedish_exposure,
       other_languages,
       communication_modes,
+      use_name_in_speech,
+      name_pronunciation_confirmed,
       completed_at,
       created_at,
       updated_at

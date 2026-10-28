@@ -1,3 +1,4 @@
+import cors from "@fastify/cors";
 import sql from "./db";
 import Fastify from "fastify";
 import rootRoutes from "./routes/root";
@@ -14,6 +15,16 @@ import onboardingRoutes from "./routes/onboarding";
 
 const app = Fastify({
   logger: true,
+});
+app.register(cors, {
+  origin: [
+    "http://localhost:8081",
+    "http://127.0.0.1:8081",
+    "http://localhost:19006",
+    "http://127.0.0.1:19006",
+  ],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 });
 const jwtSecret = process.env.JWT_SECRET;
 

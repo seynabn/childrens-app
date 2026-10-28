@@ -1,7 +1,8 @@
-
 import type { FastifyReply, FastifyRequest } from "fastify";
 import * as services from "../services";
 import { handleUnexpectedError } from "../errors/error-handler";
+import * as childServices from "../services/children";
+import { isJwtError } from "../errors/jwt-errors";
 
 // Vilka uppgifter appen måste skicka för ett talförsök.
 type CreateSpeechAttemptBody = {
@@ -12,12 +13,7 @@ type CreateSpeechAttemptBody = {
   recognitionStatus: "unprocessed" | "matched" | "uncertain" | "not_matched";
 };
 
-const validStatuses = [
-  "unprocessed",
-  "matched",
-  "uncertain",
-  "not_matched",
-];
+const validStatuses = ["unprocessed", "matched", "uncertain", "not_matched"];
 
 // Tar emot och sparar ett talförsök.
 export async function createSpeechAttempt(
@@ -56,6 +52,32 @@ export async function createSpeechAttempt(
   }
 
   try {
+    // 1. Kontrollera att användaren är inloggad.
+    await request.jwtVerify();
+    const user = request.user as { sub: string };
+
+    // 2. Kontrollera att leksessionen finns och hör till rätt barn.
+    const session = await services.getPlaySessionById(sessionId);
+
+    if (!session || Number(session.child_id) !== childId) {
+      return reply.code(404).send({
+        error: "Lekstunden hittades inte.",
+      });
+    }
+
+    // 3. Kontrollera att barnet tillhör den inloggade användaren.
+    const child = await childServices.getChildByIdAndUserId(
+      String(childId),
+      user.sub,
+    );
+
+    if (!child) {
+      return reply.code(404).send({
+        error: "Barnprofilen hittades inte.",
+      });
+    }
+
+    // 4. Spara först när kontrollerna har godkänts.
     const attempt = await services.createSpeechAttempt(
       childId,
       wordId,
@@ -64,8 +86,20 @@ export async function createSpeechAttempt(
       recognitionStatus,
     );
 
+    if (!attempt) {
+      return reply.code(409).send({
+        error: "Lekstunden är avslutad. Ett nytt talförsök kan inte sparas.",
+      });
+    }
+
     return reply.code(201).send({ attempt });
-  } catch (error) {
+  } catch (error: unknown) {
+    if (isJwtError(error)) {
+      return reply.code(401).send({
+        error: "Du måste vara inloggad.",
+      });
+    }
+
     return handleUnexpectedError(
       request,
       reply,
@@ -86,15 +120,56 @@ export async function getSpeechAttemptsBySession(
   request: FastifyRequest<{ Params: GetSpeechAttemptsParams }>,
   reply: FastifyReply,
 ) {
-  const sessionId = Number(request.params.sessionId);
+  try {
+    // 1. Kontrollera att användaren är inloggad.
+    await request.jwtVerify();
 
-  if (!Number.isInteger(sessionId) || sessionId <= 0) {
-    return reply.code(400).send({
-      error: "sessionId måste vara ett positivt heltal.",
-    });
+    const user = request.user as { sub: string };
+    const sessionId = Number(request.params.sessionId);
+
+    if (!Number.isInteger(sessionId) || sessionId <= 0) {
+      return reply.code(400).send({
+        error: "sessionId måste vara ett positivt heltal.",
+      });
+    }
+
+    // 2. Hämta leksessionen.
+    const session = await services.getPlaySessionById(sessionId);
+
+    if (!session) {
+      return reply.code(404).send({
+        error: "Lekstunden hittades inte.",
+      });
+    }
+
+    // 3. Kontrollera att barnet tillhör användaren.
+    const child = await childServices.getChildByIdAndUserId(
+      String(session.child_id),
+      user.sub,
+    );
+
+    if (!child) {
+      return reply.code(404).send({
+        error: "Lekstunden hittades inte.",
+      });
+    }
+
+    // 4. Hämta talförsöken först efter kontrollen.
+    const attempts = await services.getSpeechAttemptsBySession(sessionId);
+
+    return reply.code(200).send({ attempts });
+  } catch (error: unknown) {
+    if (isJwtError(error)) {
+      return reply.code(401).send({
+        error: "Du måste vara inloggad.",
+      });
+    }
+
+    return handleUnexpectedError(
+      request,
+      reply,
+      error,
+      "Kunde inte hämta talförsöken.",
+    );
   }
-
-  const attempts = await services.getSpeechAttemptsBySession(sessionId);
-
-  return reply.code(200).send({ attempts });
 }

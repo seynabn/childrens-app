@@ -14,3 +14,4 @@ export {
   getOnboardingByChildId,
   saveOnboardingByChildId,
 } from "./onboarding";
+export { getPlaySessionById } from "./play-sessions";

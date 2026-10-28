@@ -14,3 +14,7 @@ export async function endPlaySession(
   return await repository.endPlaySession(sessionId, engagement);
 }
 
+// Hämtar en leksession via dess ID.
+export async function getPlaySessionById(sessionId: number) {
+  return await repository.getPlaySessionById(sessionId);
+}

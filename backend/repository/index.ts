@@ -12,3 +12,4 @@ export { updateChildByIdAndUserId } from "./children";
 export { deleteChildByIdAndUserId } from "./children";
 export { findOnboardingByChildId, saveOnboardingByChildId,
 } from "./onboarding";
+export { getPlaySessionById } from "./play-sessions";

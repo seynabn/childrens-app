@@ -1,6 +1,7 @@
 
 import type { FastifyReply, FastifyRequest } from "fastify";
 import * as services from "../services";
+import * as childServices from "../services/children";
 
 type CreatePlaySessionBody = {
   childId: number;
@@ -27,6 +28,23 @@ export async function createPlaySession(
     });
   }
 
+  // 1. Kontrollera att användaren är inloggad.
+  await request.jwtVerify();
+  const user = request.user as { sub: string };
+
+  // 2. Kontrollera att användaren äger barnprofilen.
+  const child = await childServices.getChildByIdAndUserId(
+    String(childId),
+    user.sub,
+  );
+
+  if (!child) {
+    return reply.code(404).send({
+      error: "Barnprofilen hittades inte.",
+    });
+  }
+
+  // 3. Skapa lekstunden först efter kontrollerna.
   const session = await services.createPlaySession(childId);
 
   return reply.code(201).send({ session });
@@ -62,9 +80,35 @@ export async function endPlaySession(
     });
   }
 
+  // 1. Kontrollera att användaren är inloggad.
+  await request.jwtVerify();
+  const user = request.user as { sub: string };
+
+  // 2. Hämta lekstunden innan vi försöker avsluta den.
+  const existingSession = await services.getPlaySessionById(sessionId);
+
+  if (!existingSession) {
+    return reply.code(404).send({
+      error: "Lekstunden hittades inte eller är redan avslutad.",
+    });
+  }
+
+  // 3. Kontrollera att användaren äger barnprofilen.
+  const child = await childServices.getChildByIdAndUserId(
+    String(existingSession.child_id),
+    user.sub,
+  );
+
+  if (!child) {
+    return reply.code(404).send({
+      error: "Lekstunden hittades inte eller är redan avslutad.",
+    });
+  }
+
+  // 4. Avsluta lekstunden först efter kontrollerna.
   const session = await services.endPlaySession(
     sessionId,
-    engagement,
+    engagement as EndPlaySessionBody["engagement"],
   );
 
   if (!session) {
